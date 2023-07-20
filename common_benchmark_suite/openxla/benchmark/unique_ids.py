@@ -164,6 +164,24 @@ OUTPUT_DATA_RESNET50_FP32_PT_2048X7X7XF32 = f"{OUTPUT_DATA_RESNET50_PT_2048X7X7}
 OUTPUT_DATA_RESNET50_FP16_PT_2048X7X7XF16 = f"{OUTPUT_DATA_RESNET50_PT_2048X7X7}-fp16"
 
 ################################################################################
+# EfficientNet models                                                          #
+################################################################################
+
+MODEL_EFFICIENTNET = "11f0dda7-dcb5-4398-810c-f37a56bb0637"
+MODEL_IMPL_EFFICIENTNET = f"{MODEL_EFFICIENTNET}-model_impl"
+MODEL_EFFICIENTNETB7 = f"11f0dda7-dcb5-4398-810c-f37a56bb0637-model_efficientnetb7"
+MODEL_EFFICIENTNETB7_FP32 = f"{MODEL_EFFICIENTNETB7}-fp32"
+
+# TF EfficientNetB7 models and test data.
+MODEL_IMPL_EFFICIENTNET_TF = f"{MODEL_IMPL_EFFICIENTNET}-tf"
+MODEL_EFFICIENTNETB7_FP32_TF = f"{MODEL_EFFICIENTNETB7_FP32}-tf"
+MODEL_EFFICIENTNETB7_FP32_TF_600X600X3XF32 = f"{MODEL_EFFICIENTNETB7_FP32_TF}-600x600x3xf32"
+INPUT_DATA_EFFICIENTNETB7_TF_600X600X3 = "dc8dd41a-4b0e-4d44-9f87-2a8c12aecb90"
+INPUT_DATA_EFFICIENTNETB7_FP32_TF_600X600X3XF32 = f"{INPUT_DATA_EFFICIENTNETB7_TF_600X600X3}-fp32"
+OUTPUT_DATA_EFFICIENTNETB7_TF_1000 = "51e8c318-e222-4301-b853-f1e6868b6a13"
+OUTPUT_DATA_EFFICIENTNETB7_FP32_TF_1000XF32 = f"{OUTPUT_DATA_EFFICIENTNETB7_TF_1000}-fp32"
+
+################################################################################
 # Device IDs                                                                   #
 ################################################################################
 DEVICE_SPEC_GCP_C2_STANDARD_16 = "9a4804f1-b1b9-46cd-b251-7f16a655f782"
