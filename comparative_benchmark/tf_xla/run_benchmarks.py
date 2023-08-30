@@ -61,7 +61,8 @@ def _run_framework_benchmark(
         tf.config.experimental.reset_memory_stats(tf_device)
 
       model_obj = model_utils.create_model_obj(model)
-      inputs = [np.load(path) for path in input_npys]
+      #inputs = [np.load(path) for path in input_npys]
+      inputs = model_obj.preprocess(model_obj.generate_default_inputs())
 
       # Run warmup.
       warmup_latencies = []

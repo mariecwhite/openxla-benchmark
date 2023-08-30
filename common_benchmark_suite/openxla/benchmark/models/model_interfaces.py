@@ -40,6 +40,18 @@ class InferenceModel(Protocol[T, U]):
     ...
 
   @abstractmethod
+  def init(self, *preprocessed_inputs: Any) -> U:
+    """Model inference function.
+
+    It can have multiple parameters for multi-value preprocessed input, e.g.,
+    encoder and decoder input tensors.
+
+    Returns:
+      A output object.
+    """
+    ...
+
+  @abstractmethod
   def forward(self, *preprocessed_inputs: Any) -> U:
     """Model inference function.
 

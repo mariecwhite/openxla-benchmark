@@ -45,7 +45,7 @@ def canonicalize_to_tuple(return_value: Union[tuple, Any]) -> tuple:
 
 def generate_and_save_inputs(model_obj: model_interfaces.InferenceModel,
                              model_dir: pathlib.Path,
-                             archive: bool = True) -> Tuple[Any, ...]:
+                             archive: bool = False) -> Tuple[Any, ...]:
   """Generates and preprocesses inputs, then saves it into `model_dir/input_npy.tz`."""
   # TODO(#44): Support multiple raw inputs.
   raw_input_obj = model_obj.generate_default_inputs()
@@ -69,16 +69,16 @@ def generate_and_save_inputs(model_obj: model_interfaces.InferenceModel,
 
 def save_outputs(outputs: Tuple[Any, ...], model_dir: pathlib.Path) -> None:
   """Saves `outputs` into `model_dir/output_npy.tgz`."""
-  outputs_dir = model_dir.joinpath("outputs")
+  outputs_dir = model_dir.joinpath("outputs_npy")
   outputs_dir.mkdir(exist_ok=True)
 
   for idx, output in enumerate(outputs):
     output_path = outputs_dir.joinpath(f"output_{idx}.npy")
     np.save(output_path, output)
 
-  with tarfile.open(model_dir.joinpath("outputs_npy.tgz"), "w:gz") as tar:
-    tar.add(f"{outputs_dir}/", arcname="")
-  shutil.rmtree(outputs_dir)
+  #with tarfile.open(model_dir.joinpath("outputs_npy.tgz"), "w:gz") as tar:
+  #  tar.add(f"{outputs_dir}/", arcname="")
+  #shutil.rmtree(outputs_dir)
 
 
 def cleanup_hlo(hlo_dir: pathlib.Path, model_dir: pathlib.Path,
@@ -92,7 +92,8 @@ def cleanup_hlo(hlo_dir: pathlib.Path, model_dir: pathlib.Path,
       f for f in os.listdir(hlo_dir) if re.search(hlo_filename_regex, f)
   ]
   if len(hlo_files) != 1:
-    raise RuntimeError("Could not find HLO file")
+    print("Warning! Could not find HLO file.")
+    return
 
   shutil.move(str(hlo_dir.joinpath(hlo_files[0])),
               str(model_dir.joinpath(HLO_STATIC_FILENAME)))

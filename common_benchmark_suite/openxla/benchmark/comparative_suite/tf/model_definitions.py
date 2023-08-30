@@ -137,10 +137,51 @@ EFFICIENTNETB7_FP32_TF_600X600X3XF32_BATCHES = utils.build_batch_models(
     template=EFFICIENTNETB7_FP32_TF_600X600X3XF32_BATCH_TEMPLATE,
     batch_sizes=[1, 64, 128])
 
+
+# GPT2LMHead models.
+# Model implementation from https://huggingface.co/docs/transformers/model_doc/gpt2#transformers.TFGPT2Model.
+GPT2LMHEAD_TF_IMPL = def_types.ModelImplementation(
+    name="GPT2_TF",
+    tags=["transformer-decoder", "gpt2", "ggml"],
+    framework_type=def_types.ModelFrameworkType.TF_V2,
+    module_path=f"{utils.MODELS_MODULE_PATH}.tf.gpt2.gpt2lmhead_model",
+    source_info=
+    "https://huggingface.co/docs/transformers/model_doc/gpt2#transformers.TFGPT2Model",
+)
+
+# Seq length 1024
+#GPT2LMHEAD_PARENT_GCS_DIR = "https://storage.googleapis.com/iree-model-artifacts/tensorflow/tf_models_2.15.0.dev20230829_1693377296/"
+# Seq length 8
+GPT2LMHEAD_PARENT_GCS_DIR = "https://storage.googleapis.com/iree-model-artifacts/tensorflow/tf_models_2.15.0.dev20230829_1693378905/"
+GPT2LMHEAD_ARTIFACTS_DIR_URL_TEMPLATE = string.Template(GPT2LMHEAD_PARENT_GCS_DIR + "${name}")
+
+GPT2LMHEAD_SMALL_FP32_TF_1024XI32_BATCH_TEMPLATE = utils.ModelTemplate(
+    name=utils.BATCH_NAME("GPT2LMHEAD_SMALL_FP32_TF_1024XI32"),
+    tags=[utils.BATCH_TAG, "fp32"],
+    model_impl=GPT2LMHEAD_TF_IMPL,
+    model_parameters={
+        "batch_size": utils.BATCH_SIZE_PARAM,
+        "data_type": "fp32",
+        "model_name": "gpt2",
+        "seq_len": 1024,
+    },
+    artifacts_dir_url=GPT2LMHEAD_ARTIFACTS_DIR_URL_TEMPLATE,
+    exported_model_types=[
+        def_types.ModelArtifactType.STABLEHLO_MLIR,
+        def_types.ModelArtifactType.XLA_HLO_DUMP,
+        def_types.ModelArtifactType.TF_SAVEDMODEL_V2,
+    ],
+)
+
+GPT2LMHEAD_SMALL_FP32_TF_1024XI32_BATCHES= utils.build_batch_models(
+    template=GPT2LMHEAD_SMALL_FP32_TF_1024XI32_BATCH_TEMPLATE,
+    batch_sizes=[1,])
+
 ALL_MODELS = list(
     itertools.chain(
         T5_LARGE_FP32_TF_512XI32_BATCHES.values(),
         BERT_LARGE_FP32_TF_384XI32_BATCHES.values(),
         RESNET50_FP32_TF_224X224X3XF32_BATCHES.values(),
         EFFICIENTNETB7_FP32_TF_600X600X3XF32_BATCHES.values(),
+        GPT2LMHEAD_SMALL_FP32_TF_1024XI32_BATCHES.values(),
     ))

@@ -9,6 +9,7 @@ import os
 import pathlib
 import re
 import multiprocessing
+import numpy as np
 import shutil
 import sys
 import tarfile
@@ -33,6 +34,8 @@ def _generate_saved_model(inputs: Tuple[Any, ...],
                           model_dir: pathlib.Path) -> pathlib.Path:
   tensor_specs = []
   for input in inputs:
+    #if not isinstance(input, tf.Tensor):
+    #  input = tf.convert_to_tensor(input)
     tensor_specs.append(tf.TensorSpec.from_tensor(input))
   call_signature = model_obj.forward.get_concrete_function(*tensor_specs)
 
@@ -42,6 +45,12 @@ def _generate_saved_model(inputs: Tuple[Any, ...],
   tf.saved_model.save(model_obj,
                       saved_model_dir,
                       signatures={"serving_default": call_signature})
+
+  # Also save a tflite file for debugging.
+  converter = tf.lite.TFLiteConverter.from_concrete_functions([call_signature], model_obj)
+  tflite_model = converter.convert()
+  tf.io.write_file(f"{model_dir}/model_fp32.tflite", tflite_model)
+
   return saved_model_dir
 
 
@@ -57,8 +66,11 @@ def _generate_mlir(model_dir: pathlib.Path, saved_model_dir: pathlib.Path):
   result = re.sub(r"func @__inference_(.+)_[0-9]+\(", r"func @\1(", result)
   pipeline = ["tf-lower-to-mlprogram-and-hlo"]
   result = run_pass_pipeline(result, ",".join(pipeline), show_debug_info=False)
-  mlir_path = model_dir.joinpath("stablehlo.mlirbc")
-  write_bytecode(str(mlir_path), result)
+  #print(f"{result}")
+  mlir_path = model_dir.joinpath("stablehlo.mlir")
+  #write_bytecode(str(mlir_path), result)
+  with open(mlir_path, 'w', encoding='utf-8') as f:
+    f.write(result)
 
 
 def _generate_artifacts(model: def_types.Model, save_dir: pathlib.Path,
@@ -78,9 +90,38 @@ def _generate_artifacts(model: def_types.Model, save_dir: pathlib.Path,
     model_obj = utils.create_model_obj(model)
 
     inputs = utils.generate_and_save_inputs(model_obj, model_dir)
-    output_obj = model_obj.forward(*inputs)
-    outputs = utils.canonicalize_to_tuple(output_obj)
+
+    # START Initial prompt.
+    outputs = model_obj.forward(*inputs)
+    outputs = utils.canonicalize_to_tuple(outputs)
     utils.save_outputs(outputs, model_dir)
+    # End Initial prompt.
+
+    # START Decoder loop.
+    # logits_1, past_key_values_1 = model_obj.init(*inputs)
+    # next_token_1 = tf.math.argmax(logits_1[:, -1, :], 1);
+    # next_token_1 = tf.reshape(next_token_1, [1, 1])
+    # next_token_1 = tf.cast(next_token_1, tf.int32)
+    # print(f"next token: {next_token_1}")
+    # logits_2, past_key_values_2 = model_obj.forward(next_token_1, past_key_values_1)
+    #
+    # inputs_dir = model_dir / "inputs_npy"
+    # inputs_dir.mkdir(exist_ok=True)
+    # inputs = (next_token_1, past_key_values_1)
+    # for idx, input in enumerate(inputs):
+    #   input_path = inputs_dir / f"input_{idx}.npy"
+    #   np.save(input_path, input)
+    #
+    # next_token_2 = tf.math.argmax(logits_2[:, -1, :], 1)
+    # next_token_2 = tf.reshape(next_token_2, [1, 1])
+    # next_token_2 = tf.cast(next_token_2, tf.int32)
+    # print(f"next token: {next_token_2}")
+    #
+    # outputs = (logits_2, past_key_values_2)
+    #
+    # outputs = utils.canonicalize_to_tuple(outputs)
+    # utils.save_outputs(outputs, model_dir)
+    # END Decoder loop.
 
     utils.cleanup_hlo(hlo_dir, model_dir, HLO_FILENAME_REGEX)
     os.unsetenv("XLA_FLAGS")
@@ -88,9 +129,9 @@ def _generate_artifacts(model: def_types.Model, save_dir: pathlib.Path,
     saved_model_dir = _generate_saved_model(inputs, model_obj, model_dir)
     _generate_mlir(model_dir, saved_model_dir)
 
-    with tarfile.open(model_dir.joinpath("tf-model.tgz"), "w:gz") as tar:
-      tar.add(f"{saved_model_dir}/", arcname="")
-    shutil.rmtree(saved_model_dir)
+    #with tarfile.open(model_dir.joinpath("tf-model.tgz"), "w:gz") as tar:
+    #  tar.add(f"{saved_model_dir}/", arcname="")
+    #shutil.rmtree(saved_model_dir)
 
     print(f"Completed generating artifacts {model.name}\n")
 
@@ -102,7 +143,7 @@ def _generate_artifacts(model: def_types.Model, save_dir: pathlib.Path,
   except Exception as e:
     print(f"Failed to import model {model.name}. Exception: {e}")
     # Remove all generated files.
-    shutil.rmtree(model_dir)
+    #shutil.rmtree(model_dir)
     raise
 
 
