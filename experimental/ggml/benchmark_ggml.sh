@@ -47,6 +47,7 @@ pushd build
 cmake ..
 make -j8
 
+
 # Generate FP32, FP16 and INT4 versions of GPT2 117M (Small).
 GPT_VARIANT="117M"
 ../examples/gpt-2/download-model.sh "${GPT_VARIANT}"

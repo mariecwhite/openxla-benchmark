@@ -9,13 +9,17 @@
 # Sets up a virtual environment suitable for running GGML benchmarks.
 #
 # Environment variables:
-#   VENV_DIR=ggml-benchmarks.venv
+#   VENV_DIR=iree-benchmarks.venv
 #   PYTHON=/usr/bin/python3.10
 
 set -euo pipefail
 
 TD="$(cd $(dirname $0) && pwd)"
+<<<<<<< Updated upstream
 VENV_DIR="${VENV_DIR:-ggml-benchmarks.venv}"
+=======
+VENV_DIR="${VENV_DIR:-iree-benchmarks.venv}"
+>>>>>>> Stashed changes
 PYTHON="${PYTHON:-"$(which python3)"}"
 
 echo "Setting up venv dir: ${VENV_DIR}"

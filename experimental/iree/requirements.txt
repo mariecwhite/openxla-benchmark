@@ -1,0 +1,9 @@
+# Use nightly releases instead of PyPi
+-f https://openxla.github.io/iree/pip-release-links.html
+iree-compiler
+iree-runtime
+
+<<<<<<< Updated upstream
+=======
+requests
+>>>>>>> Stashed changes
