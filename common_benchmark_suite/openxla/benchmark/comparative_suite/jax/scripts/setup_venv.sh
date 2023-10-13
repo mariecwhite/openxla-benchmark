@@ -32,6 +32,9 @@ python -m pip install \
   --find-links https://openxla.github.io/iree/pip-release-links.html \
   iree-compiler
 
+# Get Tensorflow to generate TFLite models from JAX models.
+python -m pip install tf-nightly
+
 if [ -z "$WITH_CUDA" ]; then
   echo "Installing jax and dependencies without cuda support; set WITH_CUDA to enable cuda support."
   python -m pip install --upgrade "jax[cpu]" "flax"

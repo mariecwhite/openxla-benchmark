@@ -4,7 +4,8 @@
 # See https://llvm.org/LICENSE.txt for license information.
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
-from transformers import AutoTokenizer, FlaxT5ForConditionalGeneration, T5Tokenizer
+import flax
+from transformers import AutoTokenizer, FlaxT5ForConditionalGeneration, GenerationConfig, T5Tokenizer
 from typing import Any, List, Tuple
 
 from openxla.benchmark.models import model_interfaces
@@ -20,7 +21,8 @@ class T5ForConditionalGeneration(model_interfaces.InferenceModel):
   tokenizer: T5Tokenizer
   tokenization_kwargs: dict[str, Any]
 
-  def __init__(self, batch_size: int, seq_len: int, model_name: str):
+  def __init__(self, batch_size: int, seq_len: int, model_name: str,
+               max_new_tokens: int):
     self.batch_size = batch_size
     self.seq_len = seq_len
     self.model_name = model_name
@@ -32,26 +34,27 @@ class T5ForConditionalGeneration(model_interfaces.InferenceModel):
         "padding": True,
         "return_tensors": "jax",
     }
+    self.generation_config = GenerationConfig.from_pretrained(
+        model_name, max_new_tokens=max_new_tokens)
 
   def generate_default_inputs(self) -> str:
-    return "summarize: My friends are cool but they eat too many carbs."
+    return "Once upon a time"
 
   def preprocess(self, input_text: str) -> Tuple[Any, Any]:
     batch_input = [input_text] * self.batch_size
     inputs = self.tokenizer(batch_input, **self.tokenization_kwargs)
-    return (inputs["input_ids"], inputs["attention_mask"])
+    return (inputs["input_ids"],)
 
-  def forward(
-      self,
-      input_ids: Any,
-      attention_mask: Any,
-      max_new_tokens: int = 50,
-  ) -> Any:
-    # Calls `generate()` which takes care of running the encoder and decoder
-    # auto-regressively.
-    return self.model.generate(input_ids=input_ids,
-                               attention_mask=attention_mask,
-                               max_new_tokens=max_new_tokens).sequences
+  def apply(self, input_ids: Any) -> Any:
+    outputs = self.model.module.apply(
+        {'params': flax.core.freeze(self.model.params)},
+        input_ids,
+        method=self.model.generate)
+    return outputs.sequences
+
+  def forward(self, input_ids: Any) -> Any:
+    return self.model.generate(
+        input_ids, generation_config=self.generation_config).sequences
 
   def postprocess(self, output: Any) -> List[str]:
     return self.tokenizer.batch_decode(output, skip_special_tokens=True)
@@ -60,6 +63,7 @@ class T5ForConditionalGeneration(model_interfaces.InferenceModel):
 def create_model(batch_size: int = 1,
                  seq_len: int = 512,
                  model_name: str = "t5-large",
+                 max_new_tokens: int = 128,
                  **_unused_params) -> T5ForConditionalGeneration:
   """Configure and create a JAX T5 model instance with a language modeling head
   on top.
@@ -75,4 +79,5 @@ def create_model(batch_size: int = 1,
   """
   return T5ForConditionalGeneration(batch_size=batch_size,
                                     seq_len=seq_len,
-                                    model_name=model_name)
+                                    model_name=model_name,
+                                    max_new_tokens=max_new_tokens)

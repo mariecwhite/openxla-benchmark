@@ -5,6 +5,7 @@
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
 import jax.numpy as jnp
+import flax
 from transformers import AutoTokenizer, BertTokenizer, FlaxBertModel
 from typing import Any, Tuple
 
@@ -28,10 +29,9 @@ class Bert(model_interfaces.InferenceModel):
       dtype: Any,
       model_name: str,
   ):
-    model: FlaxBertModel = FlaxBertModel.from_pretrained(
-        model_name,
-        dtype=dtype,
-    )
+    model: FlaxBertModel = FlaxBertModel.from_pretrained(model_name,
+                                                         dtype=dtype,
+                                                         hidden_act="relu")
     if dtype == jnp.float32:
       # The original model is fp32.
       pass
@@ -61,6 +61,12 @@ class Bert(model_interfaces.InferenceModel):
     batch_input_text = [input_text] * self.batch_size
     inputs = self.tokenizer(text=batch_input_text, **self.tokenization_kwargs)
     return (inputs["input_ids"], inputs["attention_mask"])
+
+  def apply(self, input_ids: Any, attention_mask: Any) -> Any:
+    outputs = self.model.module.apply(
+        {'params': flax.core.freeze(self.model.params)}, input_ids,
+        attention_mask)
+    return outputs.last_hidden_state
 
   def forward(self, input_ids: Any, attention_mask: Any) -> Any:
     return self.model(input_ids, attention_mask).last_hidden_state

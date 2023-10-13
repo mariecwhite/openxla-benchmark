@@ -80,6 +80,22 @@ T5_LARGE_BF16_JAX_512XI32_BATCHES = utils.build_batch_models(
     template=T5_LARGE_BF16_JAX_512XI32_BATCH_TEMPLATE,
     batch_sizes=[1, 16, 24, 32, 48, 64, 512])
 
+T5_SMALL_FP32_JAX_1X128XI32 = def_types.Model(
+    name="T5_SMALL_FP32_JAX_1X128XI32",
+    tags=["fp32", "batch-1"],
+    model_impl=T5_JAX_IMPL,
+    model_parameters=dict(batch_size=1,
+                          data_type="fp32",
+                          model_name="t5-small",
+                          seq_len=128),
+    exported_model_types=[
+        def_types.ModelArtifactType.STABLEHLO_MLIR,
+        def_types.ModelArtifactType.XLA_HLO_DUMP,
+        def_types.ModelArtifactType.TFLITE_FP32,
+    ],
+    artifacts_dir_url=f"{PARENT_GCS_DIR}/T5_SMALL_FP32_JAX_1X128XI32",
+)
+
 T5_4CG_JAX_IMPL = def_types.ModelImplementation(
     name="T5_4CG_JAX",
     tags=[
@@ -111,6 +127,87 @@ T5_4CG_LARGE_FP32_JAX_512XI32_BATCH_TEMPLATE = utils.ModelTemplate(
 T5_4CG_LARGE_FP32_JAX_512XI32_BATCHES = utils.build_batch_models(
     template=T5_4CG_LARGE_FP32_JAX_512XI32_BATCH_TEMPLATE,
     batch_sizes=[1, 16, 24, 32, 48])
+
+T5_4CG_SMALL_FP32_JAX_1X128XI32_GEN16 = def_types.Model(
+    name="T5_4CG_SMALL_FP32_JAX_1X128XI32_GEN16",
+    tags=["fp32", "batch-1", "gen-16"],
+    model_impl=T5_4CG_JAX_IMPL,
+    model_parameters=dict(batch_size=1,
+                          data_type="fp32",
+                          model_name="t5-small",
+                          seq_len=128,
+                          max_new_tokens=16),
+    exported_model_types=[
+        def_types.ModelArtifactType.STABLEHLO_MLIR,
+        def_types.ModelArtifactType.XLA_HLO_DUMP,
+    ],
+    artifacts_dir_url=f"{PARENT_GCS_DIR}/T5_4CG_SMALL_FP32_JAX_1X128XI32_GEN16",
+)
+
+T5_4CG_SMALL_FP32_JAX_1X128XI32_GEN32 = def_types.Model(
+    name="T5_4CG_SMALL_FP32_JAX_1X128XI32_GEN32",
+    tags=["fp32", "batch-1", "gen-32"],
+    model_impl=T5_4CG_JAX_IMPL,
+    model_parameters=dict(batch_size=1,
+                          data_type="fp32",
+                          model_name="t5-small",
+                          seq_len=128,
+                          max_new_tokens=32),
+    exported_model_types=[
+        def_types.ModelArtifactType.STABLEHLO_MLIR,
+        def_types.ModelArtifactType.XLA_HLO_DUMP,
+    ],
+    artifacts_dir_url=f"{PARENT_GCS_DIR}/T5_4CG_SMALL_FP32_JAX_1X128XI32_GEN32",
+)
+
+T5_4CG_SMALL_FP32_JAX_1X128XI32_GEN64 = def_types.Model(
+    name="T5_4CG_SMALL_FP32_JAX_1X128XI32_GEN64",
+    tags=["fp32", "batch-1", "gen-64"],
+    model_impl=T5_4CG_JAX_IMPL,
+    model_parameters=dict(batch_size=1,
+                          data_type="fp32",
+                          model_name="t5-small",
+                          seq_len=128,
+                          max_new_tokens=64),
+    exported_model_types=[
+        def_types.ModelArtifactType.STABLEHLO_MLIR,
+        def_types.ModelArtifactType.XLA_HLO_DUMP,
+    ],
+    artifacts_dir_url=f"{PARENT_GCS_DIR}/T5_4CG_SMALL_FP32_JAX_1X128XI32_GEN64",
+)
+
+T5_4CG_SMALL_FP32_JAX_1X128XI32_GEN128 = def_types.Model(
+    name="T5_4CG_SMALL_FP32_JAX_1X128XI32_GEN128",
+    tags=["fp32", "batch-1", "gen-128"],
+    model_impl=T5_4CG_JAX_IMPL,
+    model_parameters=dict(batch_size=1,
+                          data_type="fp32",
+                          model_name="t5-small",
+                          seq_len=128,
+                          max_new_tokens=128),
+    exported_model_types=[
+        def_types.ModelArtifactType.STABLEHLO_MLIR,
+        def_types.ModelArtifactType.XLA_HLO_DUMP,
+    ],
+    artifacts_dir_url=f"{PARENT_GCS_DIR}/T5_4CG_SMALL_FP32_JAX_1X128XI32_GEN128",
+)
+
+T5_4CG_SMALL_FP32_JAX_1X128XI32_GEN256 = def_types.Model(
+    name="T5_4CG_SMALL_FP32_JAX_1X128XI32_GEN256",
+    tags=["fp32", "batch-1", "gen-256"],
+    model_impl=T5_4CG_JAX_IMPL,
+    model_parameters=dict(batch_size=1,
+                          data_type="fp32",
+                          model_name="t5-small",
+                          seq_len=128,
+                          max_new_tokens=256),
+    exported_model_types=[
+        def_types.ModelArtifactType.STABLEHLO_MLIR,
+        def_types.ModelArtifactType.XLA_HLO_DUMP,
+    ],
+    artifacts_dir_url=f"{PARENT_GCS_DIR}/T5_4CG_SMALL_FP32_JAX_1X128XI32_GEN256",
+)
+
 
 # Bert-Large models.
 # Model implementation from https://huggingface.co/docs/transformers/model_doc/bert#transformers.FlaxBertModel.
@@ -186,6 +283,78 @@ BERT_LARGE_FP16_JAX_384XI32_BATCHES = utils.build_batch_models(
 BERT_LARGE_BF16_JAX_384XI32_BATCHES = utils.build_batch_models(
     template=BERT_LARGE_BF16_JAX_384XI32_BATCH_TEMPLATE,
     batch_sizes=[1, 16, 24, 32, 48, 64, 512, 1024, 1280])
+
+BERT_BASE_FP32_JAX_I32_INPUT_SEQUENCE_TEMPLATE = utils.ModelTemplate(
+    name=utils.SEQ_LEN_NAME("BERT_BASE_FP32_JAX_I32"),
+    tags=[utils.SEQ_LEN_TAG],
+    model_impl=BERT_JAX_IMPL,
+    model_parameters={
+        "batch_size": 1,
+        "data_type": "fp32",
+        "seq_len": utils.SEQ_LEN_PARAM,
+        "model_name": "bert-base-uncased",
+    },
+    artifacts_dir_url=ARTIFACTS_DIR_URL_TEMPLATE,
+    exported_model_types=[
+        def_types.ModelArtifactType.STABLEHLO_MLIR,
+        def_types.ModelArtifactType.XLA_HLO_DUMP,
+        def_types.ModelArtifactType.TFLITE_FP32,
+        def_types.ModelArtifactType.TFLITE_FP32_STABLEHLO,
+        def_types.ModelArtifactType.TFLITE_FP16,
+        def_types.ModelArtifactType.TFLITE_DYNAMIC_RANGE_QUANT,
+    ],
+)
+BERT_BASE_FP32_JAX_I32_INPUT_SEQUENCES = utils.build_input_sequence_models(
+    template=BERT_BASE_FP32_JAX_I32_INPUT_SEQUENCE_TEMPLATE,
+    input_sequence_lengths=[8, 32, 64, 128, 256, 512])
+
+BERT_BASE_FP16_JAX_I32_INPUT_SEQUENCE_TEMPLATE = utils.ModelTemplate(
+    name=utils.SEQ_LEN_NAME("BERT_BASE_FP16_JAX_I32"),
+    tags=[utils.SEQ_LEN_TAG],
+    model_impl=BERT_JAX_IMPL,
+    model_parameters={
+        "batch_size": 1,
+        "data_type": "fp16",
+        "seq_len": utils.SEQ_LEN_PARAM,
+        "model_name": "bert-base-uncased",
+    },
+    artifacts_dir_url=ARTIFACTS_DIR_URL_TEMPLATE,
+    exported_model_types=[
+        def_types.ModelArtifactType.STABLEHLO_MLIR,
+        def_types.ModelArtifactType.XLA_HLO_DUMP,
+        def_types.ModelArtifactType.TFLITE_FP32,
+        def_types.ModelArtifactType.TFLITE_FP32_STABLEHLO,
+        def_types.ModelArtifactType.TFLITE_FP16,
+        def_types.ModelArtifactType.TFLITE_DYNAMIC_RANGE_QUANT,
+    ],
+)
+BERT_BASE_FP16_JAX_I32_INPUT_SEQUENCES = utils.build_input_sequence_models(
+    template=BERT_BASE_FP16_JAX_I32_INPUT_SEQUENCE_TEMPLATE,
+    input_sequence_lengths=[8, 32, 64, 128, 256, 512])
+
+BERT_BASE_BF16_JAX_I32_INPUT_SEQUENCE_TEMPLATE = utils.ModelTemplate(
+    name=utils.SEQ_LEN_NAME("BERT_BASE_BF16_JAX_I32"),
+    tags=[utils.SEQ_LEN_TAG],
+    model_impl=BERT_JAX_IMPL,
+    model_parameters={
+        "batch_size": 1,
+        "data_type": "bf16",
+        "seq_len": utils.SEQ_LEN_PARAM,
+        "model_name": "bert-base-uncased",
+    },
+    artifacts_dir_url=ARTIFACTS_DIR_URL_TEMPLATE,
+    exported_model_types=[
+        def_types.ModelArtifactType.STABLEHLO_MLIR,
+        def_types.ModelArtifactType.XLA_HLO_DUMP,
+        def_types.ModelArtifactType.TFLITE_FP32,
+        def_types.ModelArtifactType.TFLITE_FP32_STABLEHLO,
+        def_types.ModelArtifactType.TFLITE_FP16,
+        def_types.ModelArtifactType.TFLITE_DYNAMIC_RANGE_QUANT,
+    ],
+)
+BERT_BASE_BF16_JAX_I32_INPUT_SEQUENCES = utils.build_input_sequence_models(
+    template=BERT_BASE_BF16_JAX_I32_INPUT_SEQUENCE_TEMPLATE,
+    input_sequence_lengths=[8, 32, 64, 128, 256, 512])
 
 # ResNet models.
 # Model implementation from https://huggingface.co/docs/transformers/model_doc/resnet#transformers.FlaxResNetModel.
@@ -312,23 +481,65 @@ GPT2LMHEAD_PIPELINE_JAX_1X4XI32 = def_types.Model(
     exported_model_types=[
         def_types.ModelArtifactType.STABLEHLO_MLIR,
         def_types.ModelArtifactType.XLA_HLO_DUMP,
+        def_types.ModelArtifactType.TFLITE_FP32,
     ],
     artifacts_dir_url=f"{PARENT_GCS_DIR}/GPT2LMHEAD_PIPELINE_JAX_1X4XI32",
 )
 
+# ViT models.
+# Model implementation from https://huggingface.co/docs/transformers/model_doc/vit#transformers.TFViTForImageClassification.
+VIT_CLASSIFICATION_JAX_IMPL = def_types.ModelImplementation(
+    name="VIT_CLASSIFICATION_JAX",
+    tags=["vision-transformer"],
+    framework_type=def_types.ModelFrameworkType.JAX,
+    module_path=f"{utils.MODELS_MODULE_PATH}.jax.vit.vit_for_classification",
+    source_info=
+    "https://huggingface.co/docs/transformers/model_doc/vit#transformers.FlaxViTForImageClassification",
+)
+
+VIT_CLASSIFICATION_JAX_3X224X224XF32 = def_types.Model(
+    name="VIT_CLASSIFICATION_JAX_3X224X224XF32",
+    tags=["fp32", "batch-1"],
+    model_impl=VIT_CLASSIFICATION_JAX_IMPL,
+    model_parameters=dict(batch_size=1,
+                          model_name="google/vit-base-patch16-224"),
+    exported_model_types=[
+        def_types.ModelArtifactType.STABLEHLO_MLIR,
+        def_types.ModelArtifactType.XLA_HLO_DUMP,
+        def_types.ModelArtifactType.TFLITE_FP32,
+        def_types.ModelArtifactType.TFLITE_FP32_STABLEHLO,
+        def_types.ModelArtifactType.TFLITE_FP16,
+        def_types.ModelArtifactType.TFLITE_DYNAMIC_RANGE_QUANT,
+        def_types.ModelArtifactType.TFLITE_INT8,
+    ],
+    artifacts_dir_url=f"{PARENT_GCS_DIR}/VIT_CLASSIFICATION_JAX_3X224X224XF32",
+)
+
 ALL_MODELS = list(
     itertools.chain(
-        T5_LARGE_FP32_JAX_512XI32_BATCHES.values(),
-        T5_LARGE_FP16_JAX_512XI32_BATCHES.values(),
-        T5_LARGE_BF16_JAX_512XI32_BATCHES.values(),
-        T5_4CG_LARGE_FP32_JAX_512XI32_BATCHES.values(),
-        BERT_LARGE_FP32_JAX_384XI32_BATCHES.values(),
-        BERT_LARGE_FP16_JAX_384XI32_BATCHES.values(),
-        BERT_LARGE_BF16_JAX_384XI32_BATCHES.values(),
-        RESNET50_FP32_JAX_3X224X224XF32_BATCHES.values(),
-        RESNET50_FP16_JAX_3X224X224XF16_BATCHES.values(),
-        RESNET50_BF16_JAX_3X224X224XBF16_BATCHES.values(),
-        GPT2LMHEAD_FP32_JAX_512XI32_BATCHES.values(),
+        # Batch size models.
+        # T5_LARGE_FP32_JAX_512XI32_BATCHES.values(),
+        # T5_LARGE_FP16_JAX_512XI32_BATCHES.values(),
+        # T5_LARGE_BF16_JAX_512XI32_BATCHES.values(),
+        # T5_4CG_LARGE_FP32_JAX_512XI32_BATCHES.values(),
+        # BERT_LARGE_FP32_JAX_384XI32_BATCHES.values(),
+        # BERT_LARGE_FP16_JAX_384XI32_BATCHES.values(),
+        # BERT_LARGE_BF16_JAX_384XI32_BATCHES.values(),
+        # RESNET50_FP32_JAX_3X224X224XF32_BATCHES.values(),
+        # RESNET50_FP16_JAX_3X224X224XF16_BATCHES.values(),
+        # RESNET50_BF16_JAX_3X224X224XBF16_BATCHES.values(),
+        # GPT2LMHEAD_FP32_JAX_512XI32_BATCHES.values(),
+        # Input sequence models.
+        BERT_BASE_FP32_JAX_I32_INPUT_SEQUENCES.values(),
+        BERT_BASE_FP16_JAX_I32_INPUT_SEQUENCES.values(),
+        BERT_BASE_BF16_JAX_I32_INPUT_SEQUENCES.values(),
     )) + [
-        GPT2LMHEAD_PIPELINE_JAX_1X4XI32,
+        # GPT2LMHEAD_PIPELINE_JAX_1X4XI32,
+        # T5_SMALL_FP32_JAX_1X128XI32,
+        T5_4CG_SMALL_FP32_JAX_1X128XI32_GEN16,
+        T5_4CG_SMALL_FP32_JAX_1X128XI32_GEN32,
+        T5_4CG_SMALL_FP32_JAX_1X128XI32_GEN64,
+        T5_4CG_SMALL_FP32_JAX_1X128XI32_GEN128,
+        T5_4CG_SMALL_FP32_JAX_1X128XI32_GEN256,
+        VIT_CLASSIFICATION_JAX_3X224X224XF32,
     ]

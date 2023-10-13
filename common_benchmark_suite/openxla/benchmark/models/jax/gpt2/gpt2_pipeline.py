@@ -53,7 +53,9 @@ class GPT2Pipeline(model_interfaces.InferenceModel):
   def generate_default_inputs(self) -> str:
     return "Once upon a time"
 
-  def preprocess(self, input_text: str) -> Tuple[Any,]:
+  def preprocess(self, input_text: str) -> Tuple[
+      Any,
+  ]:
     batch_input_text = [input_text] * self.batch_size
     inputs = self.tokenizer(text=batch_input_text, **self.tokenization_kwargs)
     return (inputs["input_ids"],)
