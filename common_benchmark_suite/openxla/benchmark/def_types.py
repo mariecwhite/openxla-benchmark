@@ -51,6 +51,7 @@ class ModelArtifactType(Enum):
   XLA_HLO_DUMP = "xla_hlo_dump"
   STABLEHLO_MLIR = "stablehlo_mlir"
   LINALG_MLIR = "linalg_mlir"
+  TOSA_MLIR = "tosa_mlir"
 
 
 @dataclass(frozen=True)

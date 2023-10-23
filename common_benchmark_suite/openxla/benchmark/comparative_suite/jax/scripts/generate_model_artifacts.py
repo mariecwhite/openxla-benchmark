@@ -6,15 +6,12 @@
 
 import numbers
 import numpy as np
-import flax
 import tensorflow as tf
 from jax.experimental import jax2tf
-from collections.abc import Callable, Sequence
 
 import argparse
-import concurrent.futures
-import functools
 import jax
+import multiprocessing
 import os
 import pathlib
 import re
@@ -28,7 +25,6 @@ sys.path.insert(0, str(pathlib.Path(__file__).parents[5]))
 from openxla.benchmark import def_types
 from openxla.benchmark.comparative_suite.jax import model_definitions
 from openxla.benchmark.models import utils
-from openxla.benchmark.models.jax.bert import bert_model
 
 HLO_FILENAME_REGEX = r".*jit_forward.before_optimizations.txt"
 GCS_UPLOAD_DIR = os.getenv("GCS_UPLOAD_DIR", "gs://iree-model-artifacts/jax")
@@ -72,7 +68,6 @@ def _generate_tflite(model_obj: Any, inputs: Any, model_dir: pathlib.Path,
                              input_signature=input_signature,
                              autograph=False)
     tf_predict(*inputs)
-
   except Exception as e:
     print(f"Failed to convert Flax model to TF {e}")
     return
@@ -156,7 +151,7 @@ def _generate_tflite(model_obj: Any, inputs: Any, model_dir: pathlib.Path,
     try:
 
       def representative_examples():
-        for _ in range(100):
+        for _ in range(10):
           random_inputs = []
           for input in inputs:
             if issubclass(input.dtype.type, numbers.Integral):
@@ -196,6 +191,7 @@ def _generate_tflite(model_obj: Any, inputs: Any, model_dir: pathlib.Path,
 def _generate_artifacts(model: def_types.Model, save_dir: pathlib.Path,
                         iree_ir_tool: Optional[pathlib.Path],
                         auto_upload: bool):
+  print(f"Generating artifacts for {model.name}")
   model_dir = save_dir / model.name
   model_dir.mkdir(exist_ok=True)
 
@@ -211,7 +207,6 @@ def _generate_artifacts(model: def_types.Model, save_dir: pathlib.Path,
     model_obj = utils.create_model_obj(model)
 
     inputs = utils.generate_and_save_inputs(model_obj, model_dir)
-
     jit_inputs = jax.device_put(inputs)
     jit_function = jax.jit(model_obj.forward)
     jit_output_obj = jit_function(*jit_inputs)
@@ -303,19 +298,14 @@ def main(output_dir: pathlib.Path, filters: List[str],
 
   output_dir.mkdir(parents=True, exist_ok=True)
 
-  with concurrent.futures.ProcessPoolExecutor(max_workers=jobs) as executor:
-    future_list = []
-    for model in models:
-      # We need to generate artifacts in a separate process each time in order for
-      # XLA to update the HLO dump directory.
-      print(f"Submitting job for model {model}")
-      future_list.append(
-          executor.submit(_generate_artifacts,
-                          model=model,
-                          save_dir=output_dir,
-                          iree_ir_tool=iree_ir_tool,
-                          auto_upload=auto_upload))
-    concurrent.futures.wait(future_list)
+  for model in models:
+    # We need to generate artifacts in a separate proces each time in order for
+    # XLA to update the HLO dump directory.
+    p = multiprocessing.Process(target=_generate_artifacts,
+                                args=(model, output_dir, iree_ir_tool,
+                                      auto_upload))
+    p.start()
+    p.join()
 
   if auto_upload:
     utils.gcs_upload(f"{output_dir}/**", f"{GCS_UPLOAD_DIR}/{output_dir.name}/")

@@ -4,6 +4,9 @@
 # See https://llvm.org/LICENSE.txt for license information.
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
+import flax
+import jax.numpy as jnp
+
 from transformers import AutoTokenizer, GPT2Tokenizer, FlaxGPT2LMHeadModel
 from typing import Any, List, Tuple
 
@@ -46,6 +49,15 @@ class GPT2LMHead(model_interfaces.InferenceModel):
     batch_input_text = [input_text] * self.batch_size
     inputs = self.tokenizer(text=batch_input_text, **self.tokenization_kwargs)
     return (inputs["input_ids"], inputs["attention_mask"])
+
+  def apply(self, input_ids: Any, attention_mask: Any) -> Any:
+    batch_size, sequence_length = input_ids.shape
+    position_ids = jnp.broadcast_to(
+        jnp.arange(sequence_length)[None, :], (batch_size, sequence_length))
+    outputs = self.model.module.apply(
+        {"params": flax.core.freeze(self.model.params)}, input_ids,
+        attention_mask, position_ids)
+    return outputs.logits
 
   def forward(self, input_ids: Any, attention_mask: Any) -> Any:
     return self.model(input_ids, attention_mask).logits

@@ -5,6 +5,7 @@
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
 from PIL import Image
+import flax
 import jax.numpy as jnp
 from transformers import AutoImageProcessor, FlaxResNetModel
 from typing import Any, Tuple
@@ -53,6 +54,15 @@ class ResNet(model_interfaces.InferenceModel):
     tensor = jnp.asarray(jnp.tile(tensor, [self.batch_size, 1, 1, 1]),
                          dtype=self.model.dtype)
     return tensor
+
+  def apply(self, input_tensor: Any) -> Any:
+    input_tensor = jnp.transpose(input_tensor, (0, 2, 3, 1))
+    outputs = self.model.module.apply(
+        {
+            "params": flax.core.freeze(self.model.params["params"]),
+            "batch_stats": flax.core.freeze(self.model.params["batch_stats"])
+        }, input_tensor)
+    return outputs.last_hidden_state
 
   def forward(self, input_tensor: Any) -> Any:
     return self.model(input_tensor).last_hidden_state

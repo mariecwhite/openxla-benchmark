@@ -64,7 +64,7 @@ class Bert(model_interfaces.InferenceModel):
 
   def apply(self, input_ids: Any, attention_mask: Any) -> Any:
     outputs = self.model.module.apply(
-        {'params': flax.core.freeze(self.model.params)}, input_ids,
+        {"params": flax.core.freeze(self.model.params)}, input_ids,
         attention_mask)
     return outputs.last_hidden_state
 

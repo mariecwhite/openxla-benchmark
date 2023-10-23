@@ -61,7 +61,8 @@ def run_command(benchmark_command: list[str]) -> tuple[str]:
     output = stdout_data.decode()
     print(output)
 
-  LATENCY_REGEX = re.compile("INFO: Inference timings in us: .* Inference \(avg\): (.*)")
+  LATENCY_REGEX = re.compile(
+      "INFO: Inference timings in us: .* Inference \(avg\): (.*)")
   match = LATENCY_REGEX.search(output)
   latency_ms = 0 if not match else float(match.group(1)) * 1e-3
 
@@ -88,7 +89,9 @@ def benchmark(artifact_dir: pathlib.Path, tflite_filename: str,
   output = result.stdout.decode("utf-8")
   print(output)
 
-  IREE_MEM_PEAK_REGEX = re.compile("INFO: Overall peak memory footprint \(MB\) via periodic monitoring: (.*)")
+  IREE_MEM_PEAK_REGEX = re.compile(
+      "INFO: Overall peak memory footprint \(MB\) via periodic monitoring: (.*)"
+  )
   match = IREE_MEM_PEAK_REGEX.search(output)
   tflite_mem_peak = 0 if not match else float(match.group(1).strip())
 
@@ -113,10 +116,11 @@ def _parse_arguments() -> argparse.Namespace:
                       type=pathlib.Path,
                       required=True,
                       help="Path to the TFLite benchmark_model binary.")
-  parser.add_argument("--benchmark_model_flex_path",
-                      type=pathlib.Path,
-                      required=True,
-                      help="Path to the TFLite benchmark_model with flex ops binary.")
+  parser.add_argument(
+      "--benchmark_model_flex_path",
+      type=pathlib.Path,
+      required=True,
+      help="Path to the TFLite benchmark_model with flex ops binary.")
   parser.add_argument("--threads",
                       type=str,
                       help="A comma-separated list of threads.")
@@ -145,7 +149,7 @@ def main(output_csv: pathlib.Path,
   for thread in threads:
     try:
       latency_ms, tflite_mem_peak, system_mem_peak = benchmark(
-            artifact_dir, "model_fp32", benchmark_model_path, thread)
+          artifact_dir, "model_fp32", benchmark_model_path, thread)
 
       with open(output_csv, 'a') as file:
         file.write(
@@ -155,8 +159,7 @@ def main(output_csv: pathlib.Path,
       print(f"Failed to benchmark model {artifact_dir.name}. Exception: {e}")
       with open(output_csv, 'a') as file:
         file.write(
-            f"{artifact_dir.name},tfl,no_flex,{thread},exception: {e},,,\n"
-        )
+            f"{artifact_dir.name},tfl,no_flex,{thread},exception: {e},,,\n")
 
     try:
       latency_ms, tflite_mem_peak, system_mem_peak = benchmark(
@@ -169,9 +172,7 @@ def main(output_csv: pathlib.Path,
     except Exception as e:
       print(f"Failed to benchmark model {artifact_dir.name}. Exception: {e}")
       with open(output_csv, 'a') as file:
-        file.write(
-            f"{artifact_dir.name},tfl,flex,{thread},exception: {e},,,\n"
-        )
+        file.write(f"{artifact_dir.name},tfl,flex,{thread},exception: {e},,,\n")
 
 
 if __name__ == "__main__":

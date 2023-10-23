@@ -20,13 +20,10 @@ class GPT2Pipeline(model_interfaces.InferenceModel):
   model_name: str
   tokenizer: GPT2Tokenizer
   tokenization_kwargs: dict[str, Any]
+  generate_config: GenerationConfig
 
-  def __init__(
-      self,
-      batch_size: int,
-      seq_len: int,
-      model_name: str,
-  ):
+  def __init__(self, batch_size: int, seq_len: int, model_name: str,
+               max_new_tokens: int):
     self.model = FlaxGPT2LMHeadModel.from_pretrained(model_name)
     self.model_name = model_name
     self.batch_size = batch_size
@@ -41,14 +38,23 @@ class GPT2Pipeline(model_interfaces.InferenceModel):
         "return_tensors": "jax",
     }
 
-    self.generation_config = GenerationConfig.from_pretrained(
+    # self.generation_config = GenerationConfig.from_pretrained(
+    #     model_name,
+    #     max_new_tokens=200,
+    #     do_sample=True,
+    #     use_cache=True,
+    #     temperature=0.9,
+    #     top_k=40,
+    #     top_p=0.9)
+    self.generate_config = GenerationConfig.from_pretrained(
         model_name,
-        max_new_tokens=200,
-        do_sample=True,
+        max_new_tokens=max_new_tokens,
+        early_stopping=False,
+        do_sample=False,
+        num_beams=1,
+        num_beam_groups=1,
         use_cache=True,
-        temperature=0.9,
-        top_k=40,
-        top_p=0.9)
+    )
 
   def generate_default_inputs(self) -> str:
     return "Once upon a time"
@@ -71,6 +77,7 @@ class GPT2Pipeline(model_interfaces.InferenceModel):
 def create_model(batch_size: int = 1,
                  seq_len: int = 1024,
                  model_name: str = "gpt2",
+                 max_new_tokens: int = 256,
                  **_unused_params) -> GPT2Pipeline:
   """Configure and create a JAX GPT2LMHead pipeline.
   Args:
@@ -79,9 +86,11 @@ def create_model(batch_size: int = 1,
     model_name: The name of the GPT2 variant to use. Supported variants include:
       gpt2 (117M params), gpt2-medium (345M params), gpt2-large (774M params),
       gpt2-xl (1558M params).
+    max_new_tokens: The maximum number of tokens to generate.
   Returns:
     A JAX GPT2Pipeline.
   """
   return GPT2Pipeline(batch_size=batch_size,
                       seq_len=seq_len,
-                      model_name=model_name)
+                      model_name=model_name,
+                      max_new_tokens=max_new_tokens)
