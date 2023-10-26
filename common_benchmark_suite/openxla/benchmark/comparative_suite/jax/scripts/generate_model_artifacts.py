@@ -155,9 +155,8 @@ def _generate_tflite(model_obj: Any, inputs: Any, model_dir: pathlib.Path,
           random_inputs = []
           for input in inputs:
             if issubclass(input.dtype.type, numbers.Integral):
-              # If input is integer, use full extents.
-              min = np.iinfo(input.dtype.type).min
-              max = np.iinfo(input.dtype.type).max
+              min = -127
+              max = 127
             elif issubclass(input.dtype.type, numbers.Real):
               # If input is float, use values between 0 and 1.
               min = 0
@@ -172,14 +171,17 @@ def _generate_tflite(model_obj: Any, inputs: Any, model_dir: pathlib.Path,
 
       converter = create_converter(tf_predict)
       converter.optimizations = [tf.lite.Optimize.DEFAULT]
-      converter.target_spec.supported_ops = [
-          tf.lite.OpsSet.TFLITE_BUILTINS_INT8
-      ]
-      converter.target_spec.supported_types = [tf.int8]
-      converter.representative_dataset = representative_examples
+      converter.default_ranges_stats = (-10, 10)
       converter.inference_type = tf.int8
-      converter.inference_input_type = tf.int8
-      converter.inference_output_type = tf.int8
+      #converter.target_spec.supported_ops = [
+      #    tf.lite.OpsSet.TFLITE_BUILTINS_INT8
+      #
+      #]
+      #converter.target_spec.supported_types = [tf.int8]
+      #converter.representative_dataset = representative_examples
+      #converter.inference_type = tf.int8
+      #converter.inference_input_type = tf.int8
+      #converter.inference_output_type = tf.int8
       tflite_model_int8 = converter.convert()
       tflite_model_int8_path = model_dir / "model_int8.tflite"
       tflite_model_int8_path.write_bytes(tflite_model_int8)
@@ -306,6 +308,7 @@ def main(output_dir: pathlib.Path, filters: List[str],
                                       auto_upload))
     p.start()
     p.join()
+    #_generate_artifacts(model, output_dir, iree_ir_tool, auto_upload)
 
   if auto_upload:
     utils.gcs_upload(f"{output_dir}/**", f"{GCS_UPLOAD_DIR}/{output_dir.name}/")

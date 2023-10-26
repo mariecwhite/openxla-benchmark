@@ -70,8 +70,8 @@ def run_command(benchmark_command: list[str]) -> tuple[str]:
 
 
 def benchmark(artifact_dir: pathlib.Path, tflite_filename: str,
-              benchmark_model_path: pathlib.Path, num_threads: str):
-  model_path = artifact_dir / f"{tflite_filename}.tflite"
+    benchmark_model_path: pathlib.Path, num_threads: str):
+  model_path = artifact_dir / tflite_filename
   command = [
       str(benchmark_model_path),
       f"--graph={model_path}",
@@ -134,11 +134,11 @@ def _parse_arguments() -> argparse.Namespace:
 
 
 def main(output_csv: pathlib.Path,
-         artifact_dir: pathlib.Path,
-         benchmark_model_path: pathlib.Path,
-         benchmark_model_flex_path: pathlib.Path,
-         threads: str,
-         tasksets: str = None):
+    artifact_dir: pathlib.Path,
+    benchmark_model_path: pathlib.Path,
+    benchmark_model_flex_path: pathlib.Path,
+    threads: str,
+    tasksets: str = None):
 
   if not output_csv.exists():
     output_csv.write_text(
@@ -147,32 +147,31 @@ def main(output_csv: pathlib.Path,
 
   threads = threads.split(",")
   for thread in threads:
-    try:
-      latency_ms, tflite_mem_peak, system_mem_peak = benchmark(
-          artifact_dir, "model_fp32", benchmark_model_path, thread)
+    def benchmark_flavor(benchmark_flavor: str, tflite_filename: str):
+      try:
+        if benchmark_flavor == "flex":
+          benchmark_binary = benchmark_model_flex_path
+        else:
+          benchmark_binary = benchmark_model_path
 
-      with open(output_csv, 'a') as file:
-        file.write(
-            f"{artifact_dir.name},tfl,no_flex,{thread},{latency_ms},{tflite_mem_peak},{system_mem_peak}\n"
-        )
-    except Exception as e:
-      print(f"Failed to benchmark model {artifact_dir.name}. Exception: {e}")
-      with open(output_csv, 'a') as file:
-        file.write(
-            f"{artifact_dir.name},tfl,no_flex,{thread},exception: {e},,,\n")
+        latency_ms, tflite_mem_peak, system_mem_peak = benchmark(
+            artifact_dir, tflite_filename, benchmark_binary, thread)
 
-    try:
-      latency_ms, tflite_mem_peak, system_mem_peak = benchmark(
-          artifact_dir, "model_fp32", benchmark_model_flex_path, thread)
+        with open(output_csv, 'a') as file:
+          file.write(
+              f"{artifact_dir.name},tfl,{benchmark_flavor},{thread},{latency_ms},{tflite_mem_peak},{system_mem_peak}\n"
+          )
+      except Exception as e:
+        print(f"Failed to benchmark model {artifact_dir.name}. Exception: {e}")
+        with open(output_csv, 'a') as file:
+          file.write(
+              f"{artifact_dir.name},tfl,{benchmark_flavor},{thread},exception: {e},,,\n")
 
-      with open(output_csv, 'a') as file:
-        file.write(
-            f"{artifact_dir.name},tfl,flex,{thread},{latency_ms},{tflite_mem_peak},{system_mem_peak}\n"
-        )
-    except Exception as e:
-      print(f"Failed to benchmark model {artifact_dir.name}. Exception: {e}")
-      with open(output_csv, 'a') as file:
-        file.write(f"{artifact_dir.name},tfl,flex,{thread},exception: {e},,,\n")
+    tflite_files = artifact_dir.rglob("*.tflite")
+    tflite_filename = next(tflite_files).name
+
+    benchmark_flavor("no_flex", tflite_filename)
+    benchmark_flavor("flex", tflite_filename)
 
 
 if __name__ == "__main__":

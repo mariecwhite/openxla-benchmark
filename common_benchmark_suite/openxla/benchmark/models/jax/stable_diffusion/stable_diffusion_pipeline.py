@@ -29,7 +29,7 @@ class StableDiffusionPipeline(model_interfaces.InferenceModel):
     self.batch_size = batch_size
     self.seq_len = seq_len
     self.model_name = model_name
-    self.num_inference_steps = 20
+    self.num_inference_steps = 5
     self.guidance_scale = 7.5
     self.prng_seed = jax.random.PRNGKey(0)
 

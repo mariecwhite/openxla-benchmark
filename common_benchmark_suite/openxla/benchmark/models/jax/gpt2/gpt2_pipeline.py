@@ -46,7 +46,7 @@ class GPT2Pipeline(model_interfaces.InferenceModel):
     #     temperature=0.9,
     #     top_k=40,
     #     top_p=0.9)
-    self.generate_config = GenerationConfig.from_pretrained(
+    self.generation_config = GenerationConfig.from_pretrained(
         model_name,
         max_new_tokens=max_new_tokens,
         early_stopping=False,

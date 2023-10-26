@@ -28,8 +28,8 @@ def compare_npy(a, b, atol, rtol):
 
 
 def check_accuracy(artifact_dir: pathlib.Path, vmfb_name: str,
-                   iree_run_module_path: pathlib.Path, num_threads: int,
-                   atol: float, rtol: float):
+    iree_run_module_path: pathlib.Path, num_threads: int,
+    atol: float, rtol: float):
   inputs_dir = artifact_dir / "inputs_npy"
   num_inputs = len(list(inputs_dir.glob("*.npy")))
 
@@ -47,6 +47,8 @@ def check_accuracy(artifact_dir: pathlib.Path, vmfb_name: str,
   for i in range(num_inputs):
     command.append(f"--input=@{inputs_dir}/input_{i}.npy")
 
+  command_str = " ".join(command)
+  print(f"Running command: {command_str}")
   subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
   a = np.load(output_npy)
@@ -61,6 +63,8 @@ def run_command(benchmark_command: list[str]) -> tuple[str]:
   Returns:
     An array containing values for [`latency`, `vmhwm`, `vmrss`, `rssfile`]
   """
+  command_str = " ".join(benchmark_command)
+  print(f"Running command: {command_str}")
   benchmark_process = subprocess.Popen(benchmark_command,
                                        stdout=subprocess.PIPE,
                                        stderr=subprocess.STDOUT)
@@ -110,8 +114,28 @@ def run_command(benchmark_command: list[str]) -> tuple[str]:
   return (latency_ms, iree_mem_peak, vmhwm * 1e-3)
 
 
+MODELS_WITH_DUMMY_INPUTS = {
+    "SD_PIPELINE_FP32_JAX_64XI32_BATCH1": ["1x64xi32", ],
+    "SD_PIPELINE_FP32_JAX_64XI32_BATCH8": ["8x64xi32", ],
+    "SD_PIPELINE_FP16_JAX_64XI32_BATCH1": ["1x64xi32", ],
+    "SD_PIPELINE_FP16_JAX_64XI32_BATCH8": ["8x64xi32", ],
+    "BERT_BASE_BF16_JAX_I32_SEQLEN8": ["1x8xi32", "1x8xi32"],
+    "BERT_BASE_BF16_JAX_I32_SEQLEN32": ["1x32xi32", "1x32xi32"],
+    "BERT_BASE_BF16_JAX_I32_SEQLEN64": ["1x64xi32", "1x64xi32"],
+    "BERT_BASE_BF16_JAX_I32_SEQLEN128": ["1x128xi32", "1x128xi32"],
+    "BERT_BASE_BF16_JAX_I32_SEQLEN256": ["1x256xi32", "1x256xi32"],
+    "BERT_BASE_BF16_JAX_I32_SEQLEN512": ["1x512xi32", "1x512xi32"],
+    "BERT_BASE_INT8_TFLITE_I32_SEQLEN8": ["1x8xi32", "1x8xi32"],
+    "BERT_BASE_INT8_TFLITE_I32_SEQLEN32": ["1x32xi32", "1x32xi32"],
+    "BERT_BASE_INT8_TFLITE_I32_SEQLEN64": ["1x64xi32", "1x64xi32"],
+    "BERT_BASE_INT8_TFLITE_I32_SEQLEN128": ["1x128xi32", "1x128xi32"],
+    "BERT_BASE_INT8_TFLITE_I32_SEQLEN256": ["1x256xi32", "1x256xi32"],
+    "BERT_BASE_INT8_TFLITE_I32_SEQLEN512": ["1x512xi32", "1x512xi32"],
+    "VIT_CLASSIFICATION_INT8_TFLITE_3X224X224XINT8": ["1x3x224x224xi8", ],
+}
+
 def benchmark(artifact_dir: pathlib.Path, vmfb_name: str,
-              iree_benchmark_module_path: pathlib.Path, num_threads: str):
+    iree_benchmark_module_path: pathlib.Path, num_threads: str):
   inputs_dir = artifact_dir / "inputs_npy"
   num_inputs = len(list(inputs_dir.glob("*.npy")))
 
@@ -125,8 +149,12 @@ def benchmark(artifact_dir: pathlib.Path, vmfb_name: str,
       "--print_statistics",
   ]
 
-  for i in range(num_inputs):
-    command.append(f"--input=@{inputs_dir}/input_{i}.npy")
+  if artifact_dir.name in MODELS_WITH_DUMMY_INPUTS:
+    for input in MODELS_WITH_DUMMY_INPUTS[artifact_dir.name]:
+      command.append(f"--input={input}=0")
+  else:
+    for i in range(num_inputs):
+      command.append(f"--input=@{inputs_dir}/input_{i}.npy")
 
   return run_command(command)
 
@@ -162,7 +190,7 @@ def _parse_arguments() -> argparse.Namespace:
   )
   parser.add_argument("--atol",
                       type=float,
-                      default=1.e-1,
+                      default=1.e-5,
                       help="The absolute tolerance to use for accuracy checks.")
   parser.add_argument("--rtol",
                       type=float,
@@ -172,60 +200,45 @@ def _parse_arguments() -> argparse.Namespace:
 
 
 def main(output_csv: pathlib.Path,
-         artifact_dir: pathlib.Path,
-         iree_run_module_path: pathlib.Path,
-         iree_benchmark_module_path: pathlib.Path,
-         threads: str,
-         atol: float,
-         rtol: float,
-         tasksets: str = None):
+    artifact_dir: pathlib.Path,
+    iree_run_module_path: pathlib.Path,
+    iree_benchmark_module_path: pathlib.Path,
+    threads: str,
+    atol: float,
+    rtol: float,
+    tasksets: str = None):
 
   if not output_csv.exists():
     output_csv.write_text(
         "name,compile_flags,threads,accuracy,latency,peak_mem_iree,peak_mem_system\n"
     )
 
+  should_check_accuracy = artifact_dir.name not in MODELS_WITH_DUMMY_INPUTS
+
   threads = threads.split(",")
   for thread in threads:
-    try:
-      is_accurate = check_accuracy(artifact_dir, "module_default",
-                                   iree_run_module_path, thread, atol, rtol)
-      if not is_accurate:
-        with open(output_csv, 'a') as file:
-          file.write(f"{artifact_dir.name},default,{thread},fail,,,\n")
-      else:
+    def benchmark_flavor(flavor: str):
+      try:
+        if should_check_accuracy:
+          is_accurate = check_accuracy(artifact_dir, f"module_{flavor}",
+                                       iree_run_module_path, thread, atol, rtol)
+        else:
+          is_accurate = "no test data"
+
         latency_ms, iree_mem_peak, system_mem_peak = benchmark(
-            artifact_dir, "module_default", iree_benchmark_module_path, thread)
+            artifact_dir, f"module_{flavor}", iree_benchmark_module_path, thread)
 
         with open(output_csv, 'a') as file:
           file.write(
-              f"{artifact_dir.name},default,{thread},pass,{latency_ms},{iree_mem_peak},{system_mem_peak}\n"
+              f"{artifact_dir.name},{flavor},{thread},{is_accurate},{latency_ms},{iree_mem_peak},{system_mem_peak}\n"
           )
-    except Exception as e:
-      print(f"Failed to benchmark model {artifact_dir.name}. Exception: {e}")
-      with open(output_csv, 'a') as file:
-        file.write(f"{artifact_dir.name},default,{thread},exception: {e},,,\n")
-
-    try:
-      is_accurate = check_accuracy(artifact_dir, "module_experimental",
-                                   iree_run_module_path, thread, atol, rtol)
-      if not is_accurate:
+      except Exception as e:
+        print(f"Failed to benchmark model {artifact_dir.name}. Exception: {e}")
         with open(output_csv, 'a') as file:
-          file.write(f"{artifact_dir.name},experimental,{thread},fail,,,\n")
-      else:
-        latency_ms, iree_mem_peak, system_mem_peak = benchmark(
-            artifact_dir, "module_experimental", iree_benchmark_module_path,
-            thread)
+          file.write(f"{artifact_dir.name},{flavor},{thread},exception: {e},,,\n")
 
-        with open(output_csv, 'a') as file:
-          file.write(
-              f"{artifact_dir.name},experimental,{thread},pass,{latency_ms},{iree_mem_peak},{system_mem_peak}\n"
-          )
-    except Exception as e:
-      print(f"Failed to benchmark model {artifact_dir.name}. Exception: {e}")
-      with open(output_csv, 'a') as file:
-        file.write(
-            f"{artifact_dir.name},experimental,{thread},exception: {e},,,\n")
+    benchmark_flavor("default")
+    benchmark_flavor("experimental")
 
 
 if __name__ == "__main__":

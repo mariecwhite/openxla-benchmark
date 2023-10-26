@@ -31,9 +31,9 @@ class ModelImplementation:
   # Framework the model is implemented in.
   framework_type: ModelFrameworkType
   # Source of the model.
-  source_info: str
+  source_info: Optional[str] = None
   # Model module path
-  module_path: str
+  module_path: Optional[str] = None
 
   def __str__(self):
     return self.name
