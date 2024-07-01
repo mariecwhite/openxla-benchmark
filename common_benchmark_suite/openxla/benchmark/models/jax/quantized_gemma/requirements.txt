@@ -1,0 +1,6 @@
+lingvo @ git+https://github.com/mariecwhite/lingvo@support-python3.11
+paxml @ git+https://github.com/mariecwhite/paxml@gemma
+praxis @ git+https://github.com/mariecwhite/praxis@gemma
+saxml @ git+https://github.com/mariecwhite/saxml@r1.2.0-setup
+jax
+jaxlib
