@@ -1,0 +1,5 @@
+paxml @ git+https://github.com/google/paxml
+praxis @ git+https://github.com/google/praxis
+saxml @ git+https://github.com/mariecwhite/saxml@r1.2.0-setup
+jax
+jaxlib
